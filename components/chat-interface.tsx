@@ -76,12 +76,12 @@ const CAMPAIGN_STEPS = [
 		component: <RegionSelector />,
 		expectsResponse: true,
 	},
-	{
-		id: 'startDate',
-		prompt: 'When would you like to start this campaign?',
-		component: <StartDate />,
-		expectsResponse: true,
-	},
+	// {
+	// 	id: 'startDate',
+	// 	prompt: 'When would you like to start this campaign?',
+	// 	component: <StartDate />,
+	// 	expectsResponse: true,
+	// },
 	{
 		id: 'creative',
 		prompt: 'Please provide your creative brief and any reference materials:',

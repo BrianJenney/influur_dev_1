@@ -27,18 +27,7 @@ function convertBigIntToString(obj: any): any {
 export async function POST(request: Request) {
 	try {
 		const body = await request.json();
-		const influencers = (await getRecommendedInfluencers(body))
-			.map(({ price, ...rest }) => ({
-				...rest,
-				price: price ? (price * 100).toString() : null,
-			}))
-			.filter(
-				(influencer) =>
-					influencer.price !== null &&
-					influencer.instagram_user_insights?.followers &&
-					influencer.tiktok_user_insights?.followers &&
-					influencer.youtube_user_insights?.followers
-			);
+		const influencers = await getRecommendedInfluencers(body);
 
 		// Convert BigInt values to strings before sending response
 		const serializedInfluencers = convertBigIntToString(influencers);

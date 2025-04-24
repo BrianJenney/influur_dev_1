@@ -8,37 +8,30 @@ import { Badge } from '@/components/ui/badge';
 import {
 	Instagram,
 	Youtube,
-	Users,
-	BarChart3,
 	Check,
 	Eye,
-	Info,
 	TwitterIcon as TikTok,
 } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
-import {
-	Tooltip,
-	TooltipContent,
-	TooltipProvider,
-	TooltipTrigger,
-} from '@/components/ui/tooltip';
-import { users } from '@prisma/client';
+import { cn } from '@/lib/utils';
 
-interface Influencer extends users {
-	tiktok_user_insights: {
-		followers: bigint;
-		engagement_rate: number;
-		handle: string;
-		is_influur_verified: boolean;
-		avg_views: number;
-		avg_likes: number;
-		avg_comments: number;
-		avg_shares: number;
-	} | null;
+interface Influencer {
+	id: bigint;
+	user_id: bigint;
+	user_name: string;
+	full_name: string | null;
+	gender: string | null;
+	price: string | null;
+	profile_pic: string | null;
+	tiktok_followers: string | null;
+	instagram_followers: string | null;
+	youtube_followers: string | null;
+	last_location: string | null;
+	verified: boolean;
 }
 
 interface InfluencerListProps {
-	onComplete?: (selectedInfluencers: any[]) => void;
+	onComplete?: (selectedInfluencers: Influencer[]) => void;
 	campaignData?: any;
 }
 
@@ -48,7 +41,9 @@ export default function InfluencerList({
 }: InfluencerListProps) {
 	const [influencers, setInfluencers] = useState<Influencer[]>([]);
 	const [selectedInfluencers, setSelectedInfluencers] = useState<string[]>(
-		campaignData?.selectedInfluencers?.map((inf: any) => inf.id) || []
+		campaignData?.selectedInfluencers?.map((inf: any) =>
+			inf.id.toString()
+		) || []
 	);
 	const [showSelected, setShowSelected] = useState(false);
 	const [expandedInfluencer, setExpandedInfluencer] = useState<string | null>(
@@ -91,14 +86,27 @@ export default function InfluencerList({
 		);
 	};
 
-	const formatNumber = (num: number | bigint) => {
-		const n = Number(num);
+	const formatNumber = (num: string | null) => {
+		if (!num) return '0';
+		const n = parseInt(num.replace(/,/g, ''));
 		if (n >= 1000000) {
 			return (n / 1000000).toFixed(1) + 'M';
 		} else if (n >= 1000) {
 			return (n / 1000).toFixed(1) + 'K';
 		}
 		return n.toString();
+	};
+
+	const formatPrice = (price: string | null) => {
+		if (!price) return 'TBD';
+		if (price.toLowerCase() === 'unknown') return 'TBD';
+		if (price.includes('>')) {
+			return `$${price.replace('>', '').trim()} and up`;
+		}
+		if (price.includes('<')) {
+			return `Up to $${price.replace('<', '').trim()}`;
+		}
+		return price;
 	};
 
 	const getPlatformIcon = (platform: string) => {
@@ -144,134 +152,117 @@ export default function InfluencerList({
 				</Button>
 			</div>
 
-			<div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
+			<div className='grid grid-cols-1 lg:grid-cols-2 gap-6 max-w-7xl mx-auto'>
 				{influencers
 					.filter(
 						(inf) =>
 							!showSelected ||
 							selectedInfluencers.includes(inf.id.toString())
 					)
-					.map((influencer, index) => (
-						<Card key={influencer.id} className='relative'>
-							<CardContent className='p-4'>
-								<div className='flex items-start justify-between'>
-									<div className='flex items-start gap-4'>
-										<Avatar className='h-12 w-12'>
-											<AvatarImage
-												src={`https://picsum.photos/200/200?random=${index}`}
-												alt={influencer.user_name}
-											/>
-											<AvatarFallback>
-												{influencer.first_name?.charAt(
-													0
-												)}
-												{influencer.last_name?.charAt(
-													0
-												)}
-											</AvatarFallback>
-										</Avatar>
-										<div>
-											<div className='font-medium'>
-												{influencer.first_name}{' '}
-												{influencer.last_name}
+					.map((influencer) => (
+						<Card
+							key={influencer.id.toString()}
+							className={cn(
+								'relative cursor-pointer transition-all duration-200',
+								selectedInfluencers.includes(
+									influencer.id.toString()
+								)
+									? 'ring-2 ring-orange-500'
+									: 'hover:ring-1 hover:ring-orange-300'
+							)}
+							onClick={() =>
+								toggleInfluencer(influencer.id.toString())
+							}
+						>
+							<CardContent className='p-6'>
+								<div className='flex items-start gap-4'>
+									<Avatar className='h-14 w-14 flex-shrink-0'>
+										<AvatarImage
+											src={
+												influencer.profile_pic ||
+												undefined
+											}
+											alt={influencer.user_name}
+										/>
+										<AvatarFallback>
+											{influencer.full_name
+												? `${influencer.full_name.charAt(
+														0
+												  )}`
+												: influencer.user_name.charAt(
+														0
+												  )}
+										</AvatarFallback>
+									</Avatar>
+									<div className='min-w-0 flex-1'>
+										<div className='font-medium truncate'>
+											{influencer.full_name ||
+												influencer.user_name}
+										</div>
+										<div className='text-sm text-muted-foreground truncate'>
+											@{influencer.user_name}
+										</div>
+										{influencer.last_location && (
+											<div className='text-sm text-muted-foreground truncate'>
+												{influencer.last_location}
 											</div>
-											{influencer.tiktok_user_insights
-												?.handle && (
-												<div className='text-sm text-muted-foreground flex items-center gap-1'>
-													<TikTok className='h-3 w-3' />
-													@
-													{
-														influencer
-															.tiktok_user_insights
-															.handle
-													}
+										)}
+
+										<div className='mt-3 space-y-2'>
+											{influencer.price && (
+												<div className='font-medium whitespace-nowrap'>
+													{formatPrice(
+														influencer.price
+													)}
 												</div>
 											)}
+											<div className='flex items-center gap-4 text-sm text-muted-foreground'>
+												{influencer.tiktok_followers && (
+													<div className='flex items-center gap-1 whitespace-nowrap'>
+														<TikTok className='h-3 w-3' />
+														<span>
+															{formatNumber(
+																influencer.tiktok_followers
+															)}
+														</span>
+													</div>
+												)}
+												{influencer.instagram_followers && (
+													<div className='flex items-center gap-1 whitespace-nowrap'>
+														<Instagram className='h-3 w-3' />
+														<span>
+															{formatNumber(
+																influencer.instagram_followers
+															)}
+														</span>
+													</div>
+												)}
+												{influencer.youtube_followers && (
+													<div className='flex items-center gap-1 whitespace-nowrap'>
+														<Youtube className='h-3 w-3' />
+														<span>
+															{formatNumber(
+																influencer.youtube_followers
+															)}
+														</span>
+													</div>
+												)}
+											</div>
 										</div>
-									</div>
-									<div className='text-right pr-8'>
-										<div className='font-medium'>
-											$
-											{influencer.price?.toLocaleString()}
-										</div>
-										{influencer.tiktok_user_insights && (
-											<div className='flex items-center justify-end gap-2 text-sm text-muted-foreground'>
-												<Users className='h-3 w-3' />
-												<span>
-													{formatNumber(
-														influencer
-															.tiktok_user_insights
-															.followers
-													)}
-												</span>
-												<BarChart3 className='h-3 w-3 ml-1' />
-												<span>
-													{influencer.tiktok_user_insights.engagement_rate?.toFixed(
-														1
-													)}
-													%
-												</span>
+
+										{influencer.verified && (
+											<div className='mt-3'>
+												<Badge
+													variant='secondary'
+													className='flex items-center gap-1'
+												>
+													<Check className='h-3 w-3' />
+													Verified
+												</Badge>
 											</div>
 										)}
 									</div>
 								</div>
-
-								{influencer.tiktok_user_insights && (
-									<div className='mt-2 grid grid-cols-2 gap-2 text-sm text-muted-foreground'>
-										<div className='flex items-center gap-1'>
-											<span>Avg Views:</span>
-											<span className='font-medium'>
-												{formatNumber(
-													influencer
-														.tiktok_user_insights
-														.avg_views || 0
-												)}
-											</span>
-										</div>
-										<div className='flex items-center gap-1'>
-											<span>Avg Likes:</span>
-											<span className='font-medium'>
-												{formatNumber(
-													influencer
-														.tiktok_user_insights
-														.avg_likes || 0
-												)}
-											</span>
-										</div>
-										<div className='flex items-center gap-1'>
-											<span>Avg Comments:</span>
-											<span className='font-medium'>
-												{formatNumber(
-													influencer
-														.tiktok_user_insights
-														.avg_comments || 0
-												)}
-											</span>
-										</div>
-										<div className='flex items-center gap-1'>
-											<span>Avg Shares:</span>
-											<span className='font-medium'>
-												{formatNumber(
-													influencer
-														.tiktok_user_insights
-														.avg_shares || 0
-												)}
-											</span>
-										</div>
-									</div>
-								)}
-
-								<Checkbox
-									checked={selectedInfluencers.includes(
-										influencer.id.toString()
-									)}
-									onCheckedChange={() =>
-										toggleInfluencer(
-											influencer.id.toString()
-										)
-									}
-									className='absolute top-2 right-2'
-								/>
 							</CardContent>
 						</Card>
 					))}
