@@ -7,9 +7,13 @@ import { useRouter } from 'next/navigation';
 
 interface CampaignSuccessProps {
 	campaignId: string;
+	onComplete?: () => void;
 }
 
-export default function CampaignSuccess({ campaignId }: CampaignSuccessProps) {
+export default function CampaignSuccess({
+	campaignId,
+	onComplete,
+}: CampaignSuccessProps) {
 	const router = useRouter();
 
 	return (
@@ -49,11 +53,7 @@ export default function CampaignSuccess({ campaignId }: CampaignSuccessProps) {
 					<Button variant='outline' onClick={() => router.push('/')}>
 						Create Another Campaign
 					</Button>
-					<Button
-						onClick={() => router.push(`/campaign/${campaignId}`)}
-					>
-						View Campaign Details
-					</Button>
+					<Button onClick={onComplete}>View Campaign Details</Button>
 				</div>
 			</CardContent>
 		</Card>

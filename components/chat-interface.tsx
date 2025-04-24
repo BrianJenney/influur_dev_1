@@ -110,7 +110,7 @@ const CAMPAIGN_STEPS = [
 		id: 'success',
 		prompt: 'Your proposals have been sent successfully! You can now track your campaign progress:',
 		component: <CampaignSuccess campaignId='1' />,
-		expectsResponse: false,
+		expectsResponse: true,
 	},
 	{
 		id: 'tracking',
