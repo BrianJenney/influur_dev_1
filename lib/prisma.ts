@@ -46,11 +46,9 @@ export async function getRecommendedInfluencers(campaignData: {
 }) {
 	const { budget, gender = 'Female' } = campaignData;
 
-	// Calculate price range (assuming budget is total, and we want to find influencers within 20-80% of budget)
 	const maxPrice = budget * 0.8;
 	const minPrice = budget * 0.2;
 
-	// First get all potential influencers that match basic criteria
 	const potentialInfluencers = await prisma.users_report.findMany({
 		where: {
 			brand: false, // Only get influencers, not brands
@@ -58,7 +56,6 @@ export async function getRecommendedInfluencers(campaignData: {
 				equals: gender,
 			},
 			deleted: false,
-			// Don't filter by price here - we'll handle that in the filter step
 		},
 		select: {
 			id: true,
@@ -93,7 +90,6 @@ export async function getRecommendedInfluencers(campaignData: {
 			if (!priceRange) return true; // Include if we can't parse the price
 
 			// Check if the influencer's price range overlaps with our budget range
-			console.log(priceRange, { maxPrice, minPrice }, 'priceRange');
 			return priceRange.min <= maxPrice && priceRange.max >= minPrice;
 		}
 	);
